@@ -67,11 +67,11 @@ footer .big{font-family:var(--ser);font-size:clamp(44px,5vw,72px);line-height:.9
 /* modal */
 .ov{position:fixed;inset:0;z-index:50;background:rgba(40,12,10,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
 .ov.on{opacity:1;pointer-events:auto}
-.md{position:relative;width:min(960px,100%);height:min(640px,calc(100dvh - 40px));background:var(--bg);border-radius:6px;display:grid;grid-template-columns:380px 1fr;overflow:hidden;transform:translateY(16px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.md{position:relative;width:min(960px,100%);height:min(640px,calc(100vh - 40px));height:min(640px,calc(100dvh - 40px));background:var(--bg);border-radius:6px;display:grid;grid-template-columns:380px 1fr;grid-template-rows:minmax(0,1fr);overflow:hidden;transform:translateY(16px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 .ov.on .md{transform:none}
-.mi{position:relative;background:var(--pap)}.mi img{width:100%;height:100%;object-fit:cover}
+.mi{position:relative;background:var(--pap);min-height:0;overflow:hidden}.mi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .mi .cap{position:absolute;left:16px;right:16px;bottom:16px;background:var(--bg);border-radius:4px;padding:14px 16px}.mi .cap b{display:block;font-family:var(--ser);font-size:26px;font-weight:500;line-height:1}.mi .cap span{font-size:12.5px;color:var(--ink2)}
-.mf{display:flex;flex-direction:column;min-height:0}
+.mf{display:flex;flex-direction:column;min-height:0;overflow:hidden}.mh,.mft{flex:none}.mb{min-height:0}
 .mh{padding:22px 28px 0;display:flex;justify-content:space-between;align-items:center}
 .x{width:40px;height:40px;border-radius:50%;box-shadow:inset 0 0 0 1px var(--ln);font-size:20px;line-height:1}.x:hover{box-shadow:inset 0 0 0 1px var(--ink)}
 .prg{display:flex;gap:6px;align-items:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase}.prg span{color:var(--ink2);display:flex;align-items:center;gap:6px}.prg span b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 1px var(--ln);font-weight:500;font-size:11px}
@@ -98,7 +98,7 @@ footer .big{font-family:var(--ser);font-size:clamp(44px,5vw,72px);line-height:.9
 .how{padding:60px 0 20px}.how .top{flex-direction:column;align-items:flex-start}.st{grid-template-columns:1fr}.st div,.st div+div{padding:20px 0;border-left:0;border-bottom:1px solid var(--ln)}
 .grid{grid-template-columns:1fr 1fr;gap:26px 10px}.ci{flex-direction:column;gap:2px}.cm{display:none}.card .btn{height:40px;font-size:11px}
 .wy,.dg,.fg{grid-template-columns:1fr;gap:34px}.why{padding:60px 0}
-.ov{padding:10px}.md{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;max-height:calc(100dvh - 20px)}.mi{height:118px}.mi .cap{left:10px;right:auto;bottom:10px;top:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center}.mi .cap b{font-size:21px}
+.ov{padding:10px}.md{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);height:auto;max-height:calc(100dvh - 20px)}.mi{height:118px}.mi .cap{left:10px;right:auto;bottom:10px;top:10px;padding:10px 12px;display:flex;flex-direction:column;justify-content:center}.mi .cap b{font-size:21px}
 .mh,.mb{padding-left:18px;padding-right:18px}.mft{padding:12px 18px}.prg em{display:none}.opts.c4{grid-template-columns:repeat(2,1fr)}.sp h3{font-size:28px}.tot b{font-size:24px}.mft .btn{padding:0 18px;font-size:11.5px}.two{grid-template-columns:1fr}.mi{height:96px}.mi .cap{max-width:72%}.hr .btn{height:36px;padding:0 14px;font-size:11px}.fl{flex-wrap:nowrap;overflow-x:auto;width:calc(100% + 32px);margin:0 -16px;padding:0 16px;scrollbar-width:none}.fl button{flex:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.rv{opacity:1;transform:none}}
 </style></head><body>
@@ -220,7 +220,7 @@ function go(n){
  S.step=n;$$('.sp').forEach(e=>e.classList.toggle('on',e.dataset.s==n));
  $$('#prg span').forEach(e=>{e.classList.toggle('on',e.dataset.s==n);e.classList.toggle('ok',e.dataset.s<n)});
  $('#prg').style.visibility=n==4?'hidden':'visible';$('#mft').style.display=n==4?'none':'flex';
- $('#bk').style.visibility=n>1?'visible':'hidden';$('#nx').textContent=n==3?(innerWidth<760?'Оформить':'Оформить заказ'):'Далее';
+ $('#bk').style.display=n>1?'':'none';$('#nx').textContent=n==3?(innerWidth<760?'Оформить':'Оформить заказ'):'Далее';
  $('#msg').textContent='';$('#mb').scrollTop=0;
 }
 function open(i){
