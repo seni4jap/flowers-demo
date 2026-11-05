@@ -339,7 +339,15 @@ function handleUpdate_(u) {
   if (isOwner && (text === '/today' || text === '/tomorrow')) return dayList_(chat, text === '/today' ? 0 : 1);
 
   const shop = settings_()['Магазин'] || 'цветочной мастерской';
-  say_(chat, 'Здравствуйте! Это бот ' + shop + ' 🌸\nЗдесь мы присылаем статусы заказов.\n\nВыбрать букет: ' + SITE_URL);
+  if (text === '/catalog') {
+    return tg_('sendMessage', { chat_id: chat, text: 'Каталог ' + esc_(shop) + ' — выбирайте букет 🌸', parse_mode: 'HTML', reply_markup: catalogButton_() });
+  }
+  tg_('sendMessage', {
+    chat_id: chat, parse_mode: 'HTML', reply_markup: catalogButton_(), disable_web_page_preview: true,
+    text: 'Здравствуйте! Это цветочная мастерская <b>' + esc_(shop) + '</b> 🌸\n\n' +
+      'Соберём букет под ваш повод и привезём по Москве за 2 часа. Каталог с ценами — по кнопке ниже.\n\n' +
+      'После заказа сюда будут приходить статусы: собран, передан курьеру, доставлен.'
+  });
 }
 
 function linkBuyer_(chat, from, no, key) {
@@ -914,4 +922,172 @@ function buildSummary_() {
   Logger.log('Проверка B5 (выручка сегодня): ' + bad);
   ss.setActiveSheet(sh);
   return sh;
+}
+
+// ===== ОФОРМЛЕНИЕ БОТА =====
+
+/** Имя, описание, кнопка «Каталог» и команды бота. Запускать после изменений, можно повторно. */
+function styleBot() {
+  const st = settings_(), shop = st['Магазин'] || 'Pivoine';
+  const log = function (m, r) { Logger.log((r && r.ok ? '✅ ' : '❌ ') + m + (r && r.ok ? '' : ': ' + JSON.stringify(r))); };
+  log('Имя', tg_('setMyName', { name: shop + ' · цветочная мастерская' }));
+  log('Короткое описание', tg_('setMyShortDescription', {
+    short_description: 'Цветочная мастерская в Москве 🌸 Авторские букеты с доставкой за 2 часа. Статусы заказов — здесь.'
+  }));
+  log('Описание', tg_('setMyDescription', {
+    description: 'Здравствуйте! Это бот цветочной мастерской ' + shop + ' 🌸\n\n' +
+      '💐 Каталог букетов с ценами — кнопка «Каталог» внизу\n' +
+      '🔔 Статусы вашего заказа: собран, передан курьеру, доставлен\n' +
+      '📷 Фото букета перед отправкой\n\n' +
+      'Доставка по Москве за 2 часа, ежедневно с 9:00 до 21:00.'
+  }));
+  log('Кнопка «Каталог»', tg_('setChatMenuButton', {
+    menu_button: { type: 'web_app', text: 'Каталог', web_app: { url: SITE_URL } }
+  }));
+  log('Команды покупателя', tg_('setMyCommands', {
+    commands: [{ command: 'catalog', description: 'Каталог букетов' }, { command: 'start', description: 'О магазине' }]
+  }));
+  owners_().forEach(function (chat) {
+    log('Команды владельца', tg_('setMyCommands', {
+      scope: { type: 'chat', chat_id: Number(chat) },
+      commands: [
+        { command: 'today', description: 'Заказы на сегодня' },
+        { command: 'tomorrow', description: 'Заказы на завтра' },
+        { command: 'catalog', description: 'Открыть сайт' }
+      ]
+    }));
+  });
+  Logger.log('Аватарку бота ставим вручную: @BotFather → /setuserpic → выбрать бота → отправить картинку.');
+}
+
+function catalogButton_() {
+  return { inline_keyboard: [[{ text: '🌸 Открыть каталог', web_app: { url: SITE_URL } }]] };
+}
+
+// ===== ДЕМО-ДАННЫЕ =====
+
+/**
+ * Заполняет «Заказы» и «Клиенты» правдоподобными заказами за последние 30 дней — для показа клиентам.
+ * ВНИМАНИЕ: перед заполнением очищает эти два листа. Каталог и настройки не трогает.
+ */
+function seedDemo() {
+  let seed = 20261105;
+  const rnd = function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = function (a) { return a[Math.floor(rnd() * a.length)]; };
+  const wpick = function (a) { const s = a.reduce(function (x, y) { return x + y[1]; }, 0); let r = rnd() * s; for (let i = 0; i < a.length; i++) { r -= a[i][1]; if (r <= 0) return a[i][0]; } return a[0][0]; };
+
+  const people = ['Анна Смирнова', 'Мария Кузнецова', 'Елена Попова', 'Ольга Волкова', 'Дмитрий Соколов', 'Алексей Морозов',
+    'Сергей Новиков', 'Ирина Лебедева', 'Наталья Козлова', 'Татьяна Павлова', 'Андрей Семёнов', 'Екатерина Голубева',
+    'Максим Виноградов', 'Юлия Богданова', 'Павел Фёдоров', 'Светлана Михайлова', 'Артём Белов', 'Ксения Тарасова',
+    'Николай Орлов', 'Виктория Киселёва', 'Игорь Макаров', 'Полина Андреева', 'Дарья Захарова', 'Роман Никитин',
+    'Алина Громова', 'Евгений Зайцев', 'Вера Комарова', 'Кирилл Борисов', 'Марина Егорова', 'Денис Ковалёв',
+    'Софья Медведева', 'Олег Степанов', 'Людмила Яковлева', 'Илья Гусев', 'Анастасия Филиппова', 'Георгий Власов'].map(function (n, i) {
+    const d = String(9150000000 + Math.floor(rnd() * 849999999));
+    return { name: n, phone: phoneFmt_('7' + d), tg: rnd() < 0.45 ? '@' + translit_(n.split(' ')[0]).toLowerCase() + '_' + (10 + i) : '' };
+  });
+  const loyal = people.slice(0, 6);   // эти заказывают по 2–3 раза
+  const streets = ['ул. Тверская, 18', 'Кутузовский пр-т, 24', 'ул. Покровка, 31', 'Ленинский пр-т, 62', 'ул. Профсоюзная, 45',
+    'Мичуринский пр-т, 9', 'ул. Большая Дмитровка, 7', 'Ломоносовский пр-т, 14', 'ул. Маросейка, 11', 'пр-т Мира, 102',
+    'ул. Остоженка, 25', 'Хорошёвское ш., 38', 'ул. Арбат, 44', 'ул. Пятницкая, 56', 'Варшавское ш., 87'];
+  const far = ['Красногорск, ул. Ленина, 12', 'Химки, ул. Молодёжная, 4', 'Мытищи, Новомытищинский пр-т, 30', 'Одинцово, ул. Неделина, 8'];
+  const cards = ['С днём рождения, мама! Люблю тебя ❤️', 'Спасибо, что ты есть', 'С годовщиной, любимая!', 'Поздравляю с новой должностью!',
+    'Просто так 🌸', 'Выздоравливай скорее!', 'С днём рождения! Будь счастлива', 'Прости меня'];
+  const comments = ['Позвонить получателю за час', 'Домофон не работает, звонить на телефон', 'Сюрприз — не говорить от кого',
+    'Оставить у консьержа', 'Можно чуть больше зелени', 'Подъезд со двора'];
+  const recips = ['Мама', 'Ольга', 'Алина', 'Светлана Петровна', 'Катя', 'Наталья'];
+  const takers = ['Мария', 'Арсений'];
+
+  const st = settings_(), zones = zones_(st), cat = catalog_();
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const orders = [];
+  for (let back = 29; back >= 0; back--) {
+    const day = new Date(today.getTime() - back * 864e5);
+    const wd = day.getDay(), weekend = wd === 0 || wd === 5 || wd === 6;
+    let n = Math.floor(rnd() * (weekend ? 4 : 3)) + (weekend ? 1 : 0);
+    if (back === 0) n = 4;
+    for (let k = 0; k < n; k++) {
+      const p = rnd() < 0.2 ? pick(loyal) : pick(people.slice(6));
+      const item = wpick(cat.map(function (c) { return [c, c.p < 10000 ? 3 : c.p < 15000 ? 2 : 1]; }));
+      const size = wpick([['M', 6], ['S', 2], ['L', 2]]);
+      const pickup = rnd() < 0.2;
+      const zi = pickup ? -1 : wpick([[0, 6], [1, 3], [2, 1]]);
+      const zone = zi >= 0 ? zones[zi] || zones[0] : null;
+      const nowH = new Date().getHours();
+      const hour = back === 0 ? 9 + Math.floor(rnd() * Math.max(1, Math.min(12, nowH - 9))) : 9 + Math.floor(rnd() * 12);
+      const created = new Date(day.getTime()); created.setHours(hour, Math.floor(rnd() * 60), 0, 0);
+      const plus = back === 0 ? (k < 2 ? 0 : 1) : (rnd() < 0.6 ? 0 : 1);
+      const dDate = new Date(day.getTime() + plus * 864e5); dDate.setHours(12, 0, 0, 0);
+      const okSlots = SLOTS.filter(function (s) { return plus || s[1] - 1 > hour + 2; });
+      const slot = okSlots.length ? wpick(okSlots.map(function (s) { return [s, s[0] === 12 || s[0] === 15 ? 3 : 2]; })) : SLOTS[3];
+      const other = rnd() < 0.55;
+      orders.push({
+        created: created, status: '', item: item, size: size, pickup: pickup, zone: zone,
+        bouquet: r100_(item.p * SIZES[size]), delivery: pickup ? 0 : zone.p,
+        date: dDate, slot: slot, p: p, back: back, plus: plus,
+        street: pickup ? '' : (zi === 2 ? pick(far) : pick(streets)) + ', кв. ' + (1 + Math.floor(rnd() * 180)),
+        rname: other ? pick(recips) : '', rphone: other ? phoneFmt_('79' + String(100000000 + Math.floor(rnd() * 899999999))) : '',
+        card: rnd() < 0.4 ? pick(cards) : '', photo: rnd() < 0.6, anon: other && rnd() < 0.15,
+        comment: rnd() < 0.3 ? pick(comments) : '', taker: pick(takers)
+      });
+    }
+  }
+  orders.sort(function (a, b) { return a.created - b.created; });
+  // статусы: прошлое — доставлено, сегодняшние — по воронке, пара отмен
+  const todays = orders.filter(function (o) { return o.back === 0; });
+  orders.forEach(function (o) { o.status = o.pickup ? ST.given : ST.done; });
+  orders.filter(function (o) { return o.back === 1 && o.plus === 1; }).forEach(function (o) { o.status = o.pickup ? ST.ready : ST.way; });
+  [ST.new, ST.work, ST.ready, ST.way].forEach(function (s, i) {
+    if (todays[i]) todays[i].status = (s === ST.way && todays[i].pickup) ? ST.ready : s;
+  });
+  [5, 17].forEach(function (i) { if (orders[i]) orders[i].status = ST.cancel; });
+
+  const rows = orders.map(function (o, i) {
+    const r = [];
+    r[O['№']] = 1001 + i; r[O['Создан']] = o.created; r[O['Статус']] = o.status;
+    r[O['Букет']] = txt_(o.item.n); r[O['Размер']] = o.size;
+    r[O['Букет, ₽']] = o.bouquet; r[O['Доставка, ₽']] = o.delivery; r[O['Итого, ₽']] = o.bouquet + o.delivery;
+    r[O['Дата']] = o.date; r[O['Интервал']] = txt_(o.slot[0] + ':00–' + o.slot[1] + ':00');
+    r[O['Получение']] = o.pickup ? 'Самовывоз' : 'Курьер';
+    r[O['Адрес']] = txt_(o.pickup ? 'Самовывоз: ' + (st['Самовывоз'] || '') : o.street + ' (' + o.zone.n + ')');
+    r[O['Покупатель']] = txt_(o.p.name); r[O['Телефон']] = txt_(o.p.phone);
+    r[O['Получатель']] = txt_(o.rname || 'Сам покупатель'); r[O['Телефон получателя']] = txt_(o.rphone);
+    r[O['Открытка']] = txt_(o.card); r[O['Фото до отправки']] = o.photo ? 'Да' : 'Нет'; r[O['Анонимно']] = o.anon ? 'Да' : 'Нет';
+    r[O['Комментарий']] = txt_(o.comment); r[O['Взял в работу']] = o.status === ST.new ? '' : txt_(o.taker);
+    r[O['Обновлён']] = o.created; r[O['Telegram покупателя']] = '';
+    r[O['тех: сообщения']] = '[]'; r[O['тех: ключ']] = 'demo';
+    return r;
+  });
+
+  const cl = {};
+  orders.forEach(function (o) {
+    if (o.status === ST.cancel) return;
+    const c = cl[o.p.phone] || (cl[o.p.phone] = { p: o.p, n: 0, sum: 0, first: o.created, last: o.created, item: '' });
+    c.n++; c.sum += o.bouquet + o.delivery; c.last = o.created; c.item = o.item.n + ', ' + o.size;
+  });
+  const crow = Object.keys(cl).map(function (k) { return cl[k]; }).sort(function (a, b) { return b.sum - a.sum; }).map(function (c) {
+    return [txt_(c.p.phone), txt_(c.p.name), c.n, c.sum, c.first, c.last, txt_(c.item), txt_(c.p.tg)];
+  });
+
+  clearSheet_(SH.ord); clearSheet_(SH.cli);
+  sheet_(SH.ord).getRange(2, 1, rows.length, ORD_H.length).setValues(rows);
+  sheet_(SH.cli).getRange(2, 1, crow.length, CLI_H.length).setValues(crow);
+  SpreadsheetApp.flush();
+  Logger.log('Готово: ' + rows.length + ' заказов, ' + crow.length + ' клиентов за последние 30 дней.');
+}
+
+/** Очищает «Заказы» и «Клиенты» (например, перед запуском у реального клиента). Каталог и настройки не трогает. */
+function clearOrders() {
+  clearSheet_(SH.ord); clearSheet_(SH.cli);
+  Logger.log('Заказы и клиенты очищены.');
+}
+
+function clearSheet_(name) {
+  const sh = sheet_(name), n = sh.getLastRow();
+  if (n > 1) sh.getRange(2, 1, n - 1, sh.getLastColumn()).clearContent();
+}
+
+function translit_(s) {
+  const m = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
+    п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch', ы: 'y', э: 'e', ю: 'yu', я: 'ya', ь: '', ъ: '' };
+  return String(s).toLowerCase().split('').map(function (c) { return m[c] !== undefined ? m[c] : c; }).join('');
 }
