@@ -601,7 +601,6 @@ const ST_COLORS = {
 function upgrade() {
   const ss = SpreadsheetApp.getActive();
   ss.setSpreadsheetTimeZone(TZ);
-  ss.setSpreadsheetLocale('ru_RU');
   migrateDates_();
   styleAll_();
   buildSummary_();
@@ -719,6 +718,11 @@ function buildSummary_() {
   const NAME = 'Сводка';
   const old = ss.getSheetByName(NAME);
   if (old) ss.deleteSheet(old);
+  // Формулы ниже — в английском синтаксисе (запятые). Чтобы русская локаль их не сломала,
+  // на время записи переключаем таблицу на en_US, потом возвращаем прежний язык.
+  const loc = ss.getSpreadsheetLocale() || 'ru_RU';
+  ss.setSpreadsheetLocale('en_US');
+  SpreadsheetApp.flush();
   const sh = ss.insertSheet(NAME, 0);
   sh.setHiddenGridlines(true);
   sh.setTabColor(C_MOSS);
@@ -760,7 +764,7 @@ function buildSummary_() {
 
   put('A1', [[shop.toUpperCase() + ' · Сводка']]).setFontFamily('Oranienbaum').setFontSize(30).setFontColor(C_MOSS);
   sh.setRowHeight(1, 56);
-  put('A2', [['="Управленческая отчётность · обновлено "&TEXT(NOW(),"dd.mm.yyyy hh:mm")&" · отменённые заказы не учитываются"']])
+  put('A2', [['Управленческая отчётность · считается сама при каждом заказе · отменённые заказы не учитываются']])
     .setFontColor('#7A7F5C').setFontSize(10);
 
   // 1. Деньги и заказы
@@ -881,6 +885,8 @@ function buildSummary_() {
   sh.insertChart(chart);
 
   sh.setFrozenRows(2);
+  SpreadsheetApp.flush();
+  ss.setSpreadsheetLocale(/^en/.test(loc) ? 'ru_RU' : loc);
   ss.setActiveSheet(sh);
   return sh;
 }
