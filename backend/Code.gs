@@ -600,11 +600,38 @@ const ST_COLORS = {
  */
 function upgrade() {
   const ss = SpreadsheetApp.getActive();
+  Logger.log('Версия кода: 3 (автоподбор разделителя формул)');
+  Logger.log('Язык таблицы: ' + ss.getSpreadsheetLocale());
   ss.setSpreadsheetTimeZone(TZ);
-  migrateDates_();
-  styleAll_();
-  buildSummary_();
-  Logger.log('Готово: таблица оформлена, «Сводка» построена.');
+  const steps = [['Перевод дат', migrateDates_], ['Оформление листов', styleAll_], ['Сводка', buildSummary_]];
+  let fails = 0;
+  steps.forEach(function (st) {
+    try { st[1](); Logger.log('✅ ' + st[0]); }
+    catch (e) { fails++; Logger.log('❌ ' + st[0] + ': ' + (e && e.message ? e.message : e)); }
+  });
+  Logger.log(fails ? 'Есть ошибки — пришлите скриншот журнала.' : 'Готово: таблица оформлена, «Сводка» построена.');
+}
+
+/** Какой разделитель аргументов понимает эта таблица: «,» или «;». */
+function formulaSep_(sh) {
+  const c = sh.getRange('Z1');
+  c.setFormula('=SUM(1,2)');
+  SpreadsheetApp.flush();
+  const ok = c.getValue() === 3;
+  c.clearContent();
+  return ok ? ',' : ';';
+}
+
+/** Заменяет запятые-разделители на «;» вне строк в кавычках. */
+function toSep_(f, sep) {
+  if (sep === ',') return f;
+  let out = '', q = false;
+  for (let i = 0; i < f.length; i++) {
+    const ch = f.charAt(i);
+    if (ch === '"') q = !q;
+    out += (!q && ch === ',') ? sep : ch;
+  }
+  return out;
 }
 
 function migrateDates_() {
@@ -718,13 +745,10 @@ function buildSummary_() {
   const NAME = 'Сводка';
   const old = ss.getSheetByName(NAME);
   if (old) ss.deleteSheet(old);
-  // Формулы ниже — в английском синтаксисе (запятые). Чтобы русская локаль их не сломала,
-  // на время записи переключаем таблицу на en_US, потом возвращаем прежний язык.
-  const loc = ss.getSpreadsheetLocale() || 'ru_RU';
-  ss.setSpreadsheetLocale('en_US');
-  SpreadsheetApp.flush();
   const sh = ss.insertSheet(NAME, 0);
   sh.setHiddenGridlines(true);
+  const SEP = formulaSep_(sh);
+  Logger.log('Разделитель формул в этой таблице: «' + SEP + '»');
   sh.setTabColor(C_MOSS);
   const shop = settings_()['Магазин'] || 'Магазин';
   const Z = "'" + SH.ord + "'!", K = "'" + SH.cli + "'!";
@@ -743,7 +767,7 @@ function buildSummary_() {
     rows.forEach(function (row, i) {
       row.forEach(function (v, j) {
         const cell = r.offset(i, j, 1, 1);
-        if (typeof v === 'string' && v.charAt(0) === '=') cell.setFormula(v); else cell.setValue(v);
+        if (typeof v === 'string' && v.charAt(0) === '=') cell.setFormula(toSep_(v, SEP)); else cell.setValue(v);
       });
     });
     return r;
@@ -886,7 +910,8 @@ function buildSummary_() {
 
   sh.setFrozenRows(2);
   SpreadsheetApp.flush();
-  ss.setSpreadsheetLocale(/^en/.test(loc) ? 'ru_RU' : loc);
+  const bad = sh.getRange('B5').getDisplayValue();
+  Logger.log('Проверка B5 (выручка сегодня): ' + bad);
   ss.setActiveSheet(sh);
   return sh;
 }
