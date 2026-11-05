@@ -119,6 +119,7 @@ footer .in{padding:56px 0 30px}.fg{display:grid;grid-template-columns:1fr 1fr 1f
 .done{text-align:center;padding:24px 10px}.done .k{font-size:14px;color:var(--rust)!important}.done .h{font-family:var(--d);font-weight:400;text-transform:uppercase}.done .h i{font-style:normal}.done p{color:var(--mu);max-width:380px;margin:12px auto 0;font-size:14px}.done .sum{text-align:left;max-width:400px;margin:22px auto 0}.done .sum div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(42,47,12,.15);font-size:14px}.done .sum span:first-child{color:var(--mu)}
 .btn.o{background:var(--rust)}.btn.o:hover{background:var(--moss)}
 @media (max-width:1060px){.grid,.cg{grid-template-columns:repeat(2,1fr)}.md{grid-template-columns:290px 1fr}}
+.tgw{margin-top:26px;display:grid;gap:8px;justify-items:start}.tgw small{font-size:12px;color:var(--mu);max-width:360px}.op.full span{color:var(--rust)}.btn:disabled{opacity:.6;cursor:wait}
 @media (max-width:760px){.w{padding:0 16px}body{font-size:14px}.nav,.hr .tel{display:none}.hd{grid-template-columns:auto 1fr;height:64px}.logo{font-size:26px}.pill{height:36px;padding:0 14px}
 .hg{grid-template-columns:1fr;grid-template-rows:auto;height:auto}.hg>img:nth-child(2){display:none}.hg>img{height:60vh}.plate{position:relative;left:auto;top:auto;transform:none;width:auto;margin:-110px 10px 0;padding:28px 18px 70px}.plate h1{font-size:76px}.ring{width:112px;height:112px;bottom:-54px}
 .cats{padding:84px 0 20px}.cg{gap:10px;margin-top:28px}.ctg{padding:10px 10px 14px}.ctg b{font-size:22px}.cd{display:none}
@@ -180,7 +181,7 @@ footer .in{padding:56px 0 30px}.fg{display:grid;grid-template-columns:1fr 1fr 1f
 </div></section>
 
 <footer id="contacts"><svg class="torn" viewBox="0 0 1440 40" preserveAspectRatio="none" aria-hidden="true" style="transform:scaleY(-1)"><path d="M0,40 L0,12 L0,15.2 L37.73718365634334,18.3 L81.89559273720894,17.3 L125.40999263050229,4.5 L154.30991757060167,21.0 L189.07710327098323,20.2 L206.69969413988386,12.4 L228.59002478371843,13.8 L260.95614279741767,4.2 L281.89149641226084,9.0 L325.2145483101345,17.8 L344.3218831055917,18.3 L362.7624404943566,15.1 L380.8168159359652,4.0 L422.70176776714226,7.8 L443.5971651823337,21.7 L485.51421367631133,9.2 L530.281509322714,13.7 L565.9720845947329,7.7 L610.0833166295489,16.4 L655.0133746236992,20.1 L678.574619355023,10.5 L697.8852131831748,6.6 L713.9696840111964,9.4 L747.2692039282413,4.1 L782.9630999137673,10.1 L806.8817537250675,18.7 L836.2655996972287,9.7 L865.6645880568084,16.7 L881.4886178019536,21.6 L896.2203158260407,17.5 L937.2565042864609,4.3 L976.4641300138347,10.6 L1008.9767325436547,4.2 L1024.472000342021,7.3 L1069.0377571289382,7.5 L1107.2213223273804,20.7 L1151.3667248690667,10.2 L1176.7201074309198,13.4 L1215.5394039012876,5.9 L1253.4881417087968,18.4 L1294.9983599227994,4.7 L1339.2639658441492,5.6 L1364.1676629802844,15.0 L1407.5464529173503,10.1 L1440,12 L1440,40 Z" style="fill:#3B4213"/></svg><div class="w in"><div class="fg">
- <div><h5>[ связаться ]</h5><a href="tel:+79990000000">+7 999 000-00-00</a><a href="#">Telegram</a><a href="#">WhatsApp</a></div>
+ <div><h5>[ связаться ]</h5><a href="tel:+79990000000">+7 999 000-00-00</a><a href="#" data-tg target="_blank" rel="noopener">Telegram</a><a href="#">WhatsApp</a></div>
  <div><h5>[ мастерская ]</h5><p>Москва, ул. Лесная, 5</p><p>Ежедневно с 9:00 до 21:00</p></div>
  <div><h5>[ покупателям ]</h5><a href="#delivery">Доставка и оплата</a><a href="#">Политика конфиденциальности</a><a href="#">Публичная оферта</a></div></div>
  <div class="big sm" aria-label="Pivoine"><span class="wd"><span style="animation-delay:0.20s">P</span><span style="animation-delay:0.26s">i</span><span style="animation-delay:0.32s">v</span><span style="animation-delay:0.38s">o</span><span style="animation-delay:0.44s">i</span><span style="animation-delay:0.50s">n</span><span style="animation-delay:0.56s">e</span></span></div>
@@ -214,7 +215,7 @@ footer .in{padding:56px 0 30px}.fg{display:grid;grid-template-columns:1fr 1fr 1f
     <textarea class="fld mt" id="cmt" placeholder="Комментарий для флориста (необязательно)"></textarea>
     <p class="sub" style="margin:12px 0 0;font-size:12px">Нажимая «Оформить», вы соглашаетесь с политикой конфиденциальности.</p>
    </div>
-   <div class="sp" data-s="4"><div class="done"><span class="k">[ заказ принят ]</span><h3 class="h" style="font-size:52px;margin-top:8px" id="dn"></h3><p>Флорист свяжется с вами в течение 10 минут, чтобы подтвердить детали и отправить ссылку на оплату.</p><div class="sum" id="sum"></div><button class="btn o" style="margin-top:26px" id="fin">Вернуться в каталог</button></div></div>
+   <div class="sp" data-s="4"><div class="done"><span class="k" id="dk">[ заказ принят ]</span><h3 class="h" style="font-size:52px;margin-top:8px" id="dn"></h3><p>Флорист свяжется с вами в течение 10 минут, чтобы подтвердить детали и отправить ссылку на оплату.</p><div class="sum" id="sum"></div><div class="tgw" id="tgw" style="display:none"><a class="btn" id="tgb" href="#" target="_blank" rel="noopener">Следить за заказом в Telegram</a><small>Пришлём сообщение, когда флорист возьмёт заказ, соберёт букет и передаст курьеру</small></div><button class="btn o" style="margin-top:14px" id="fin">Вернуться в каталог</button></div></div>
    <p class="msg" id="msg"></p>
   </div>
   <div class="mft" id="mft"><button class="back x" id="bk" aria-label="Назад">←</button><div class="tot"><small id="tl">Букет · доставка</small><b id="tv"></b></div><button class="btn" id="nx">Далее</button></div>
@@ -223,26 +224,35 @@ footer .in{padding:56px 0 30px}.fg{display:grid;grid-template-columns:1fr 1fr 1f
 
 
 <script>
-const P=[{"n": "Нежность пионов", "img": "img/hero.webp", "p": 8500, "s": "Пионовидные розы, гортензия, эустома"}, {"n": "Розовый сад", "img": "img/c2.webp", "p": 6900, "s": "Розы, эустома, маттиола"}, {"n": "101 белая роза", "img": "img/n_white1.webp", "p": 18900, "s": "Корзина, белые розы, эвкалипт"}, {"n": "Пудровое облако", "img": "img/c3.webp", "p": 9800, "s": "Розы, гипсофила, эвкалипт"}, {"n": "Белые гортензии", "img": "img/c7.webp", "p": 7900, "s": "Гортензия, пионы, зелень"}, {"n": "Кустовые розы в корзине", "img": "img/n_pink1.webp", "p": 21500, "s": "Пионовидные кустовые розы"}, {"n": "Лилии в шляпной коробке", "img": "img/c4.webp", "p": 11900, "s": "Лилии, розы, альстромерия"}, {"n": "Сиреневый вечер", "img": "img/c6.webp", "p": 14500, "s": "Гортензия, розы, орхидея"}];
+/* Адрес сервера заказов (Google Apps Script → Развернуть → Веб-приложение). Пусто — сайт работает без отправки. */
+const API='';
+
+let P=[{"id":"1","c":"author","n":"Нежность пионов","img":"img/hero.webp","img2":"img/c8.webp","p":8500,"s":"Пионовидные розы, гортензия, эустома"},{"id":"2","c":"author","n":"Розовый сад","img":"img/c2.webp","img2":"img/c1.webp","p":6900,"s":"Розы, эустома, маттиола"},{"id":"3","c":"basket","n":"101 белая роза","img":"img/n_white1.webp","img2":"img/n_white2.webp","p":18900,"s":"Корзина, белые розы, эвкалипт"},{"id":"4","c":"box","n":"Пудровое облако","img":"img/c3.webp","img2":"img/c6.webp","p":9800,"s":"Розы, гипсофила, эвкалипт"},{"id":"5","c":"mono","n":"Белые гортензии","img":"img/c7.webp","img2":"img/c2.webp","p":7900,"s":"Гортензия, пионы, зелень"},{"id":"6","c":"basket","n":"Кустовые розы в корзине","img":"img/n_pink1.webp","img2":"img/n_pink2.webp","p":21500,"s":"Пионовидные кустовые розы"},{"id":"7","c":"box","n":"Лилии в шляпной коробке","img":"img/c4.webp","img2":"img/c3.webp","p":11900,"s":"Лилии, розы, альстромерия"},{"id":"8","c":"box","n":"Сиреневый вечер","img":"img/c6.webp","img2":"img/c4.webp","p":14500,"s":"Гортензия, розы, орхидея"}];
+let ZONES=[{n:'В пределах МКАД',p:0},{n:'До 10 км от МКАД',p:700},{n:'До 30 км от МКАД',p:1500}];
+let FULL=[],BOT='',PICKUP='м. Белорусская';
 const SZ=[['S','компактнее',.75],['M','как на фото',1],['L','пышнее',1.4]];
 const SL=[[9,12],[12,15],[15,18],[18,21]];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const fmt=n=>n.toLocaleString('ru-RU').replace(/\s/g,'\u202f')+' ₽';
+const fmt=n=>n.toLocaleString('ru-RU').replace(/\s/g,' ')+' ₽';
 const r100=n=>Math.round(n/100)*100;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let S={};
 const ov=$('#ov');
 function price(){const b=P[S.i];return r100(b.p*SZ.find(x=>x[0]==S.size)[2])}
-function deliv(){return S.mode=='p'?0:+$('#zone').value}
+function deliv(){return S.mode=='p'?0:(ZONES[+$('#zone').value]||{p:0}).p}
 function total(){
  const p=price(),d=deliv();$('#tv').textContent=fmt(p+d);
  $('#tl').textContent='Букет '+S.size+' · '+(S.mode=='p'?'самовывоз':(d?'доставка '+fmt(d):'доставка бесплатно'));
 }
 function sizes(){$('#sz').innerHTML=SZ.map(([k,t,m])=>`<button class="op${k==S.size?' on':''}" data-z="${k}"><b>${k} · ${fmt(r100(P[S.i].p*m))}</b><span>${t}</span></button>`).join('')}
 function dayLabel(n){const d=new Date();d.setDate(d.getDate()+n);return d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function dayIso(){if(S.day=='x')return $('#dpick').value;const d=new Date();d.setDate(d.getDate()+(+S.day));return iso(d)}
 function slots(){
- const today=S.day==='0',h=new Date().getHours()+2;
- $('#tt').innerHTML=SL.map(([a,b])=>{const dis=today&&h>=b-1;if(dis&&S.slot==a)S.slot=null;return `<button class="op${S.slot==a?' on':''}" data-t="${a}" ${dis?'disabled':''}><b>${a}:00–${b}:00</b></button>`}).join('');
+ const today=S.day==='0',h=new Date().getHours()+2,di=dayIso();
+ $('#tt').innerHTML=SL.map(([a,b])=>{const late=today&&h>=b-1,full=di&&FULL.includes(di+'|'+a),dis=late||full;if(dis&&S.slot==a)S.slot=null;return `<button class="op${S.slot==a?' on':''}${full?' full':''}" data-t="${a}" ${dis?'disabled':''}><b>${a}:00–${b}:00</b>${full?'<span>занято</span>':''}</button>`}).join('');
 }
+function zonesUI(){const v=$('#zone').value;$('#zone').innerHTML=ZONES.map((z,i)=>`<option value="${i}">${esc(z.n)} — ${z.p?fmt(z.p):'бесплатно'}</option>`).join('');if(ZONES[v])$('#zone').value=v}
 function go(n){
  S.step=n;$$('.sp').forEach(e=>e.classList.toggle('on',e.dataset.s==n));
  $$('#prg span').forEach(e=>{e.classList.toggle('on',e.dataset.s==n);e.classList.toggle('ok',e.dataset.s<n)});
@@ -254,13 +264,14 @@ function open(i){
  S={i,size:'M',day:'0',slot:null,mode:'c',who:'me',step:1};
  const b=P[i];$('#mimg').src=b.img;$('#mimg').alt=b.n;$('#mt').textContent=b.n;$('#ms').textContent=b.s;
  $$('#dd .op').forEach(e=>e.classList.toggle('on',e.dataset.d=='0'));$('#dd [data-d="0"] span').textContent=dayLabel(0);$('#dd [data-d="1"] span').textContent=dayLabel(1);
- $('#dpick').style.display='none';$('#dpick').min=new Date().toISOString().slice(0,10);
+ $('#dpick').style.display='none';$('#dpick').value='';$('#dpick').min=iso(new Date());
  $$('#mode .op').forEach(e=>e.classList.toggle('on',e.dataset.m=='c'));$('#addr').style.display='';
  $$('#who .op').forEach(e=>e.classList.toggle('on',e.dataset.w=='me'));$('#rcp').style.display='none';
  $$('.fld').forEach(e=>e.classList.remove('err'));
  sizes();slots();total();go(1);
  ov.classList.add('on');ov.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
  if(!SL.some(([a,b])=>new Date().getHours()+2<b-1)){S.day='1';$$('#dd .op').forEach(e=>e.classList.toggle('on',e.dataset.d=='1'));slots()}
+ load(true);
 }
 function close(){ov.classList.remove('on');ov.setAttribute('aria-hidden','true');document.body.style.overflow=''}
 function bad(el,t){el&&el.classList.add('err');$('#msg').textContent=t;el&&el.focus&&el.focus();return false}
@@ -277,18 +288,39 @@ function valid(){
  }
  return true;
 }
-function finish(){
+function order(){
+ return {a:'order',id:P[S.i].id,size:S.size,date:dayIso(),slot:S.slot,mode:S.mode,zone:+$('#zone').value,street:$('#street').value.trim(),
+  name:$('#nm').value.trim(),phone:$('#tel').value,who:S.who,rname:$('#rnm').value.trim(),rphone:$('#rtel').value,
+  card:$('#cardc').checked,cardText:$('#cardt').value.trim(),photo:$('#photo').checked,anon:$('#anon').checked,comment:$('#cmt').value.trim()};
+}
+async function submit(){
+ if(!API)return finish({});
+ const nx=$('#nx');nx.disabled=true;nx.textContent='Отправляем…';$('#msg').textContent='';
+ let r=null;
+ try{r=await (await fetch(API,{method:'POST',body:JSON.stringify(order())})).json()}catch(e){r=null}
+ nx.disabled=false;
+ if(r&&r.ok){if(r.bot)BOT=r.bot;finish(r);return}
+ go(S.step);
+ if(r&&r.err=='slot_full'){const k=dayIso()+'|'+S.slot;FULL.includes(k)||FULL.push(k);go(2);slots();$('#msg').textContent='Этот интервал только что заняли — выберите другой, пожалуйста';return}
+ if(r&&r.err=='stock'){$('#msg').textContent='Этот букет только что закончился. Выберите другой, пожалуйста';load();return}
+ $('#msg').textContent='Не получилось отправить заказ. Проверьте интернет и попробуйте ещё раз';
+}
+function finish(r){
  const b=P[S.i],day=S.day=='x'?new Date($('#dpick').value).toLocaleDateString('ru-RU',{day:'numeric',month:'long'}):dayLabel(+S.day),sl=SL.find(x=>x[0]==S.slot);
- $('#dn').innerHTML='Спасибо, <i>'+$('#nm').value.trim().split(' ')[0].replace(/[<>&]/g,'')+'</i>';
- const rows=[['Букет',b.n+', '+S.size],['Когда',day+', '+sl[0]+':00–'+sl[1]+':00'],['Куда',S.mode=='p'?'Самовывоз, м. Белорусская':$('#street').value.trim()],['Итого',fmt(price()+deliv())]];
+ $('#dn').innerHTML='Спасибо, <i>'+esc($('#nm').value.trim().split(' ')[0])+'</i>';
+ $('#dk').textContent=r.no?'[ заказ №'+r.no+' принят ]':'[ заказ принят ]';
+ const rows=[['Букет',b.n+', '+S.size],['Когда',day+', '+sl[0]+':00–'+sl[1]+':00'],['Куда',S.mode=='p'?'Самовывоз, '+PICKUP:$('#street').value.trim()],['Итого',fmt(r.total||price()+deliv())]];
  $('#sum').innerHTML='';rows.forEach(([a,c])=>{const d=document.createElement('div');d.innerHTML='<span></span><span></span>';d.children[0].textContent=a;d.children[1].textContent=c;$('#sum').appendChild(d)});
+ const tg=r.no&&r.key&&BOT;$('#tgw').style.display=tg?'':'none';
+ if(tg)$('#tgb').href='https://t.me/'+BOT+'?start=o_'+r.no+'_'+r.key;
  go(4);
 }
-$('#nx').onclick=()=>{if(!valid())return;if(S.step<3)go(S.step+1);else finish()};
+$('#nx').onclick=()=>{if($('#nx').disabled||!valid())return;if(S.step<3)go(S.step+1);else submit()};
 $('#bk').onclick=()=>go(S.step-1);$('#x').onclick=close;$('#fin').onclick=close;
 ov.addEventListener('mousedown',e=>{if(e.target==ov)close()});addEventListener('keydown',e=>{if(e.key=='Escape'&&ov.classList.contains('on'))close()});
 $('#sz').onclick=e=>{const b=e.target.closest('.op');if(!b)return;S.size=b.dataset.z;sizes();total()};
 $('#dd').onclick=e=>{const b=e.target.closest('.op');if(!b)return;S.day=b.dataset.d;$$('#dd .op').forEach(x=>x.classList.toggle('on',x==b));$('#dpick').style.display=S.day=='x'?'':'none';if(S.day=='x')$('#dpick').focus();slots()};
+$('#dpick').onchange=slots;
 $('#tt').onclick=e=>{const b=e.target.closest('.op');if(!b||b.disabled)return;S.slot=+b.dataset.t;slots();$('#msg').textContent=''};
 $('#mode').onclick=e=>{const b=e.target.closest('.op');if(!b)return;S.mode=b.dataset.m;$$('#mode .op').forEach(x=>x.classList.toggle('on',x==b));$('#addr').style.display=S.mode=='p'?'none':'';total()};
 $('#who').onclick=e=>{const b=e.target.closest('.op');if(!b)return;S.who=b.dataset.w;$$('#who .op').forEach(x=>x.classList.toggle('on',x==b));$('#rcp').style.display=S.who=='other'?'':'none'};
@@ -296,14 +328,43 @@ $('#zone').onchange=total;$('#cardc').onchange=e=>$('#cardt').style.display=e.ta
 function mask(el){el.addEventListener('input',()=>{let d=el.value.replace(/\D/g,'');if(!d){el.value='';return}if(d[0]=='8')d='7'+d.slice(1);if(d[0]!='7')d='7'+d;d=d.slice(0,11);let o='+7';if(d.length>1)o+=' ('+d.slice(1,4);if(d.length>=4)o+=')';if(d.length>4)o+=' '+d.slice(4,7);if(d.length>7)o+='-'+d.slice(7,9);if(d.length>9)o+='-'+d.slice(9,11);el.value=o})}
 mask($('#tel'));mask($('#rtel'));
 $('.grid').onclick=e=>{const c=e.target.closest('.card');if(c&&e.target.closest('button'))open(+c.dataset.i)};
-$('.fl').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('.fl button').forEach(x=>x.classList.toggle('on',x==b));$$('.card').forEach(c=>c.classList.toggle('hide',b.dataset.f!='all'&&c.dataset.c!=b.dataset.f))};
+function filter(f){$$('.card').forEach(c=>c.classList.toggle('hide',f!='all'&&c.dataset.c!=f))}
+$('.fl').onclick=e=>{const b=e.target.closest('button');if(!b)return;$$('.fl button').forEach(x=>x.classList.toggle('on',x==b));filter(b.dataset.f)};
+const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
-$$('.rv,.card').forEach(e=>{if(e.classList.contains('card'))e.classList.add('rv');io.observe(e)});
+const vo=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');vo.unobserve(e.target)}}),{threshold:.18});
+function watchCards(){
+ $$('.card').forEach(e=>{e.classList.add('rv');io.observe(e)});
+ $$('.ph img:first-child').forEach(im=>{im.classList.add('blr');rm?im.classList.add('vis'):vo.observe(im)});
+}
+$$('.rv').forEach(e=>io.observe(e));watchCards();
 
-(()=>{const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
- const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('vis');io.unobserve(e.target)}}),{threshold:.18});
- document.querySelectorAll('.sm,.blr').forEach(el=>{el.querySelectorAll('.wd span').forEach((sp,i)=>sp.style.transitionDelay=(i*0.035)+'s');rm?el.classList.add('vis'):io.observe(el)});
- document.querySelectorAll('.ph img:first-child').forEach(im=>{im.classList.add('blr');rm?im.classList.add('vis'):io.observe(im)});
+/* Каталог, зоны и занятые интервалы — из Google-таблицы */
+const sig=a=>JSON.stringify(a.map(x=>[x.id,x.n,x.c,x.p,x.s,x.img,x.img2]));
+function renderCatalog(list){
+ if(sig(list)==sig(P))return;
+ P=list;
+ $('.grid').innerHTML=P.map((b,i)=>`<article class="card" data-c="${esc(b.c)}" data-i="${i}"><button class="ph" aria-label="Заказать букет «${esc(b.n)}»"><img src="${esc(b.img)}" alt="${esc(b.n)}" loading="lazy"><img class="alt" src="${esc(b.img2||b.img)}" alt="" loading="lazy"></button>
+<h3>${esc(b.n)}</h3><p class="pr">${fmt(b.p)}</p><button class="ord">Заказать</button></article>`).join('');
+ const f=$('.fl button.on');filter(f?f.dataset.f:'all');watchCards();
+}
+let loading=false;
+async function load(quiet){
+ if(!API||loading)return;loading=true;
+ try{
+  const r=await (await fetch(API+'?a=init',{cache:'no-store'})).json();
+  if(!r.ok)return;
+  FULL=r.full||[];BOT=r.bot||BOT;
+  if(r.pickup){PICKUP=r.pickup;$('#mode [data-m="p"] span').textContent=PICKUP}
+  if(r.zones&&r.zones.length){ZONES=r.zones;zonesUI();if(ov.classList.contains('on'))total()}
+  if(BOT)$$('a[data-tg]').forEach(a=>a.href='https://t.me/'+BOT);
+  if(ov.classList.contains('on')){if(S.step<=2)slots()}else if(r.catalog&&r.catalog.length)renderCatalog(r.catalog);
+ }catch(e){}finally{loading=false}
+}
+zonesUI();load();
+
+(()=>{
+ document.querySelectorAll('.sm,.blr').forEach(el=>{el.querySelectorAll('.wd span').forEach((sp,i)=>sp.style.transitionDelay=(i*0.035)+'s');rm?el.classList.add('vis'):vo.observe(el)});
  const bo=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)document.body.style.setProperty('--bg',e.target.dataset.bg)}),{rootMargin:'-45% 0px -45% 0px'});
  document.querySelectorAll('[data-bg]').forEach(x=>bo.observe(x));})();
 document.querySelectorAll('.ctg').forEach(b=>b.addEventListener('click',()=>{const f=document.querySelector('.fl [data-f="'+b.dataset.go+'"]');f&&f.click();document.querySelector('#catalog').scrollIntoView({behavior:'smooth'})}));
