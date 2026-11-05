@@ -732,9 +732,16 @@ function buildSummary_() {
     ['Всё время', '']
   ];
   const col = function (i) { return String.fromCharCode(66 + i); };   // B, C, D, E
+  // Формулы пишем через setFormula: он всегда понимает английский синтаксис с запятыми,
+  // а setValues разбирает формулы по языку таблицы (в русской — через «;») и даёт #ERROR!.
   const put = function (a1, rows) {
     const r = sh.getRange(a1).offset(0, 0, rows.length, rows[0].length);
-    r.setValues(rows);
+    rows.forEach(function (row, i) {
+      row.forEach(function (v, j) {
+        const cell = r.offset(i, j, 1, 1);
+        if (typeof v === 'string' && v.charAt(0) === '=') cell.setFormula(v); else cell.setValue(v);
+      });
+    });
     return r;
   };
   const head = function (a1, cols) {
