@@ -70,8 +70,9 @@ function setup() {
   makeSheet_(ss, SH.set, ['Параметр', 'Значение'], SEED_SETTINGS, [260, 420]);
   const ord = ss.getSheetByName(SH.ord);
   ord.hideColumns(O['тех: сообщения'] + 1, 2);
-  const def = ss.getSheetByName('Лист1') || ss.getSheetByName('Sheet1');
-  if (def && ss.getSheets().length > 1 && def.getLastRow() === 0) ss.deleteSheet(def);
+  ss.setSpreadsheetTimeZone(TZ);
+  styleAll_();
+  buildSummary_();
 
   const me = tg_('getMe', {});
   if (!me || !me.ok) throw new Error('Бот не отвечает. Проверьте BOT_TOKEN в начале файла.');
@@ -198,7 +199,7 @@ function fullSlots_(st) {
 }
 
 function slotKey_(r) {
-  const d = String(r[O['Дата']]).match(/(\d{2})\.(\d{2})\.(\d{4})/);
+  const d = d2s_(r[O['Дата']], 'dd.MM.yyyy').match(/(\d{2})\.(\d{2})\.(\d{4})/);
   const t = String(r[O['Интервал']]).match(/^(\d{1,2})/);
   if (!d || !t) return '';
   return d[3] + '-' + d[2] + '-' + d[1] + '|' + Number(t[1]);
@@ -227,7 +228,7 @@ function createOrder_(d) {
   const bouquet = r100_(item.p * SIZES[d.size]);
   const delivery = pickup ? 0 : zone.p;
   const total = bouquet + delivery;
-  const dateRu = d.date.slice(8, 10) + '.' + d.date.slice(5, 7) + '.' + d.date.slice(0, 4);
+  const dateVal = new Date(Number(d.date.slice(0, 4)), Number(d.date.slice(5, 7)) - 1, Number(d.date.slice(8, 10)), 12);
   const interval = slot[0] + ':00–' + slot[1] + ':00';
 
   const lock = LockService.getScriptLock();
@@ -247,14 +248,14 @@ function createOrder_(d) {
     key = Utilities.getUuid().replace(/-/g, '').slice(0, 10);
     const rec = [];
     rec[O['№']] = no;
-    rec[O['Создан']] = txt_(nowStr_());
+    rec[O['Создан']] = new Date();
     rec[O['Статус']] = ST.new;
     rec[O['Букет']] = txt_(item.n);
     rec[O['Размер']] = d.size;
     rec[O['Букет, ₽']] = bouquet;
     rec[O['Доставка, ₽']] = delivery;
     rec[O['Итого, ₽']] = total;
-    rec[O['Дата']] = txt_(dateRu);
+    rec[O['Дата']] = dateVal;
     rec[O['Интервал']] = txt_(interval);
     rec[O['Получение']] = pickup ? 'Самовывоз' : 'Курьер';
     rec[O['Адрес']] = txt_(pickup ? 'Самовывоз: ' + (st['Самовывоз'] || '') : street + ' (' + zone.n + ')');
@@ -267,7 +268,7 @@ function createOrder_(d) {
     rec[O['Анонимно']] = d.anon ? 'Да' : 'Нет';
     rec[O['Комментарий']] = txt_(clean_(d.comment, 500));
     rec[O['Взял в работу']] = '';
-    rec[O['Обновлён']] = txt_(nowStr_());
+    rec[O['Обновлён']] = new Date();
     rec[O['Telegram покупателя']] = '';
     rec[O['тех: сообщения']] = '[]';
     rec[O['тех: ключ']] = key;
@@ -298,18 +299,18 @@ function upsertClient_(phone, name, sum, last, tgId) {
   const sh = sheet_(SH.cli);
   const v = sh.getDataRange().getValues();
   const digits = phone.replace(/\D/g, '');
-  const today = Utilities.formatDate(new Date(), TZ, 'dd.MM.yyyy');
+  const today = new Date();
   for (let i = 1; i < v.length; i++) {
     if (String(v[i][0]).replace(/\D/g, '') === digits) {
       if (sum) {
         sh.getRange(i + 1, 2, 1, 6).setValues([[txt_(name), (Number(v[i][2]) || 0) + 1,
-          (Number(v[i][3]) || 0) + sum, txt_(String(v[i][4])), txt_(today), txt_(last)]]);
+          (Number(v[i][3]) || 0) + sum, v[i][4] || today, today, txt_(last)]]);
       }
       if (tgId) sh.getRange(i + 1, 8).setValue(txt_(tgId));
       return;
     }
   }
-  if (sum) sh.appendRow([txt_(phone), txt_(name), 1, sum, txt_(today), txt_(today), txt_(last), txt_(tgId || '')]);
+  if (sum) sh.appendRow([txt_(phone), txt_(name), 1, sum, today, today, txt_(last), txt_(tgId || '')]);
 }
 
 // ===== TELEGRAM =====
@@ -379,7 +380,7 @@ function onButton_(q) {
     const sh = sheet_(SH.ord);
     sh.getRange(row, O['Статус'] + 1).setValue(ST[code]);
     if (code === 'work') sh.getRange(row, O['Взял в работу'] + 1).setValue(txt_(personName_(q.from)));
-    sh.getRange(row, O['Обновлён'] + 1).setValue(txt_(nowStr_()));
+    sh.getRange(row, O['Обновлён'] + 1).setValue(new Date());
   } finally {
     lock.releaseLock();
   }
@@ -418,7 +419,7 @@ function dayList_(chat, plus) {
   const d = new Date(Date.now() + plus * 864e5);
   const ru = Utilities.formatDate(d, TZ, 'dd.MM.yyyy');
   const list = ordersRows_().map(function (r, i) { return { r: r, row: i + 2 }; }).filter(function (x) {
-    return String(x.r[O['Дата']]) === ru && String(x.r[O['Статус']]) !== ST.cancel;
+    return d2s_(x.r[O['Дата']], 'dd.MM.yyyy') === ru && String(x.r[O['Статус']]) !== ST.cancel;
   }).map(function (x) { return orderAt_(x.row); });
   list.sort(function (a, b) { return a.slot - b.slot; });
   if (!list.length) return say_(chat, (plus ? 'На завтра' : 'На сегодня') + ' заказов нет.');
@@ -489,7 +490,7 @@ function orderAt_(row) {
     row: row, no: Number(r[O['№']]), status: status, code: code,
     item: String(r[O['Букет']]), size: String(r[O['Размер']]),
     bouquet: Number(r[O['Букет, ₽']]) || 0, delivery: Number(r[O['Доставка, ₽']]) || 0, total: Number(r[O['Итого, ₽']]) || 0,
-    date: String(r[O['Дата']]), interval: String(r[O['Интервал']]),
+    date: d2s_(r[O['Дата']], 'dd.MM.yyyy'), interval: String(r[O['Интервал']]),
     slot: Number(String(r[O['Интервал']]).split(':')[0]) || 0,
     pickup: String(r[O['Получение']]) === 'Самовывоз', address: String(r[O['Адрес']]),
     name: String(r[O['Покупатель']]), phone: String(r[O['Телефон']]),
@@ -557,6 +558,15 @@ function ruDate_(dmy) {
   return Number(m[1]) + ' ' + MONTHS[Number(m[2]) - 1] + ', ' + WD[d.getDay()];
 }
 
+function isDate_(v) { return Object.prototype.toString.call(v) === '[object Date]' && !isNaN(v); }
+function d2s_(v, f) { return isDate_(v) ? Utilities.formatDate(v, TZ, f) : String(v == null ? '' : v); }
+/** «05.11.2026» или «05.11.2026 13:06» → Date (дата без времени — на полдень, чтобы не уехать на соседний день). */
+function parseRu_(v) {
+  if (isDate_(v)) return v;
+  const m = String(v || '').match(/(\d{2})\.(\d{2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (!m) return v;
+  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), m[4] ? Number(m[4]) : 12, m[5] ? Number(m[5]) : 0);
+}
 function isoToday_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
 function nowStr_() { return Utilities.formatDate(new Date(), TZ, 'dd.MM.yyyy HH:mm'); }
 function r100_(n) { return Math.round(n / 100) * 100; }
@@ -572,4 +582,298 @@ function phoneFmt_(p) {
   if (d.length === 11 && d[0] === '8') d = '7' + d.slice(1);
   if (d.length !== 11 || d[0] !== '7') return '';
   return '+7 ' + d.slice(1, 4) + ' ' + d.slice(4, 7) + '-' + d.slice(7, 9) + '-' + d.slice(9, 11);
+}
+
+// ===== ОФОРМЛЕНИЕ И СВОДКА =====
+
+const C_MOSS = '#3B4213', C_CREAM = '#FFF8EA', C_BAND = '#F7F0DF', C_RUST = '#9C4A1E', C_INK = '#2A2F0C';
+const F_MONEY = '#,##0 "₽"', F_DATE = 'dd.mm.yyyy', F_DT = 'dd.mm.yyyy hh:mm';
+const ST_COLORS = {
+  'Новый': ['#FFF1C2', '#7A5B00'], 'В работе': ['#DCEBFF', '#1E4E8C'], 'Собран': ['#EDE3FF', '#5B3A9E'],
+  'В пути': ['#EDE3FF', '#5B3A9E'], 'Доставлен': ['#DDF2DF', '#1F6B2A'], 'Выдан': ['#DDF2DF', '#1F6B2A'],
+  'Отменён': ['#ECECEC', '#7A7A7A']
+};
+
+/**
+ * Обновление уже работающей таблицы: переводит старые даты, оформляет листы, строит «Сводку».
+ * Запускать после замены кода. Данные не удаляются. Можно запускать повторно.
+ */
+function upgrade() {
+  const ss = SpreadsheetApp.getActive();
+  ss.setSpreadsheetTimeZone(TZ);
+  ss.setSpreadsheetLocale('ru_RU');
+  migrateDates_();
+  styleAll_();
+  buildSummary_();
+  Logger.log('Готово: таблица оформлена, «Сводка» построена.');
+}
+
+function migrateDates_() {
+  const ord = sheet_(SH.ord), n = ord.getLastRow() - 1;
+  if (n > 0) {
+    [O['Создан'], O['Дата'], O['Обновлён']].forEach(function (ci) {
+      const rg = ord.getRange(2, ci + 1, n, 1);
+      rg.setValues(rg.getValues().map(function (r) { return [parseRu_(r[0])]; }));
+    });
+  }
+  const cli = sheet_(SH.cli), m = cli.getLastRow() - 1;
+  if (m > 0) {
+    const rg = cli.getRange(2, 5, m, 2);
+    rg.setValues(rg.getValues().map(function (r) { return [parseRu_(r[0]), parseRu_(r[1])]; }));
+  }
+}
+
+function styleSheet_(sh, widths, tab, rowH) {
+  const cols = widths.length, rows = Math.max(sh.getMaxRows(), 500);
+  if (sh.getMaxRows() < rows) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
+  sh.setHiddenGridlines(true);
+  sh.setTabColor(tab);
+  sh.getBandings().forEach(function (b) { b.remove(); });
+  const all = sh.getRange(1, 1, rows, cols);
+  all.setFontFamily('Roboto').setFontSize(11).setFontColor(C_INK).setVerticalAlignment('middle');
+  all.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false)
+    .setHeaderRowColor(C_MOSS).setFirstRowColor('#FFFFFF').setSecondRowColor(C_BAND);
+  sh.getRange(1, 1, 1, cols).setBackground(C_MOSS).setFontWeight('bold').setFontColor(C_CREAM).setFontSize(11)
+    .setWrap(true).setHorizontalAlignment('center');
+  sh.setRowHeight(1, 44);
+  if (rowH) sh.setRowHeights(2, rows - 1, rowH);
+  sh.setFrozenRows(1);
+  widths.forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });
+}
+
+function fmtCol_(sh, col, f, align) {
+  const rg = sh.getRange(2, col, sh.getMaxRows() - 1, 1);
+  if (f) rg.setNumberFormat(f);
+  if (align) rg.setHorizontalAlignment(align);
+  return rg;
+}
+
+function styleAll_() {
+  const ss = SpreadsheetApp.getActive();
+
+  // Заказы
+  const ord = sheet_(SH.ord);
+  styleSheet_(ord, [70, 140, 120, 210, 75, 110, 110, 120, 110, 120, 110, 300, 170, 170, 160, 170, 220, 110, 100, 260, 150, 140, 170, 60, 60], C_RUST, 0);
+  const oc = function (h) { return O[h] + 1; };
+  fmtCol_(ord, oc('№'), '0', 'center');
+  fmtCol_(ord, oc('Создан'), F_DT, 'center');
+  fmtCol_(ord, oc('Статус'), null, 'center').setFontWeight('bold');
+  fmtCol_(ord, oc('Размер'), null, 'center');
+  ['Букет, ₽', 'Доставка, ₽', 'Итого, ₽'].forEach(function (h) { fmtCol_(ord, oc(h), F_MONEY, 'right'); });
+  fmtCol_(ord, oc('Итого, ₽'), F_MONEY, 'right').setFontWeight('bold');
+  fmtCol_(ord, oc('Дата'), F_DATE, 'center');
+  fmtCol_(ord, oc('Интервал'), null, 'center');
+  fmtCol_(ord, oc('Получение'), null, 'center');
+  fmtCol_(ord, oc('Фото до отправки'), null, 'center');
+  fmtCol_(ord, oc('Анонимно'), null, 'center');
+  fmtCol_(ord, oc('Обновлён'), F_DT, 'center');
+  ['Адрес', 'Открытка', 'Комментарий'].forEach(function (h) {
+    fmtCol_(ord, oc(h)).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  });
+  ord.hideColumns(oc('тех: сообщения'), 2);
+  ord.setFrozenColumns(1);
+  const stRange = ord.getRange(2, oc('Статус'), ord.getMaxRows() - 1, 1);
+  const rules = Object.keys(ST_COLORS).map(function (s) {
+    return SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo(s)
+      .setBackground(ST_COLORS[s][0]).setFontColor(ST_COLORS[s][1]).setRanges([stRange]).build();
+  });
+  ord.setConditionalFormatRules(rules);
+
+  // Клиенты
+  const cli = sheet_(SH.cli);
+  styleSheet_(cli, [180, 200, 100, 130, 140, 150, 240, 160], C_MOSS, 30);
+  fmtCol_(cli, 3, '0', 'center');
+  fmtCol_(cli, 4, F_MONEY, 'right').setFontWeight('bold');
+  fmtCol_(cli, 5, F_DATE, 'center');
+  fmtCol_(cli, 6, F_DATE, 'center');
+  cli.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(1)
+    .setBackground('#DDF2DF').setFontColor('#1F6B2A').setRanges([cli.getRange(2, 3, cli.getMaxRows() - 1, 1)]).build()]);
+
+  // Каталог
+  const cat = sheet_(SH.cat);
+  styleSheet_(cat, [60, 240, 140, 170, 320, 170, 170, 120], '#EE8B6A', 34);
+  fmtCol_(cat, 1, '0', 'center');
+  fmtCol_(cat, 3, null, 'center').setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList(Object.keys(CATS), true).setAllowInvalid(false).build());
+  fmtCol_(cat, 4, F_MONEY, 'right').setFontWeight('bold');
+  fmtCol_(cat, 5).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+  const stock = fmtCol_(cat, 8, null, 'center');
+  stock.setDataValidation(SpreadsheetApp.newDataValidation()
+    .requireValueInList(['Да', 'Нет'], true).setAllowInvalid(false).build());
+  cat.setConditionalFormatRules([
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('Нет').setBackground('#F6D9D0').setFontColor(C_RUST).setRanges([stock]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenTextEqualTo('Да').setBackground('#DDF2DF').setFontColor('#1F6B2A').setRanges([stock]).build()
+  ]);
+
+  // Настройки
+  const set = sheet_(SH.set);
+  styleSheet_(set, [280, 560], '#9AA0A6', 30);
+  set.getRange(2, 2, set.getMaxRows() - 1, 1).setHorizontalAlignment('left');
+
+  const def = ss.getSheetByName('Лист1') || ss.getSheetByName('Sheet1');
+  if (def && def.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(def);
+}
+
+function buildSummary_() {
+  const ss = SpreadsheetApp.getActive();
+  const NAME = 'Сводка';
+  const old = ss.getSheetByName(NAME);
+  if (old) ss.deleteSheet(old);
+  const sh = ss.insertSheet(NAME, 0);
+  sh.setHiddenGridlines(true);
+  sh.setTabColor(C_MOSS);
+  const shop = settings_()['Магазин'] || 'Магазин';
+  const Z = "'" + SH.ord + "'!", K = "'" + SH.cli + "'!";
+  const base = Z + 'A:A,">0",' + Z + 'C:C,"<>' + ST.cancel + '"';
+  const P = [
+    ['Сегодня', ',' + Z + 'B:B,">="&TODAY()'],
+    ['7 дней', ',' + Z + 'B:B,">="&TODAY()-6'],
+    ['Этот месяц', ',' + Z + 'B:B,">="&EOMONTH(TODAY(),-1)+1'],
+    ['Всё время', '']
+  ];
+  const col = function (i) { return String.fromCharCode(66 + i); };   // B, C, D, E
+  const put = function (a1, rows) {
+    const r = sh.getRange(a1).offset(0, 0, rows.length, rows[0].length);
+    r.setValues(rows);
+    return r;
+  };
+  const head = function (a1, cols) {
+    const r = put(a1, [cols]);
+    r.setBackground(C_MOSS).setFontColor(C_CREAM).setFontWeight('bold').setFontSize(11);
+    r.offset(0, 1, 1, cols.length - 1).setHorizontalAlignment('right');
+    return r;
+  };
+
+  sh.getRange(1, 1, 120, 12).setFontFamily('Roboto').setFontSize(11).setFontColor(C_INK).setVerticalAlignment('middle');
+  sh.setColumnWidth(1, 290);
+  [2, 3, 4, 5].forEach(function (c) { sh.setColumnWidth(c, 135); });
+  sh.setColumnWidth(6, 30);
+  [7, 8, 9, 10].forEach(function (c) { sh.setColumnWidth(c, 130); });
+  sh.setColumnWidth(7, 230);
+
+  put('A1', [[shop.toUpperCase() + ' · Сводка']]).setFontFamily('Oranienbaum').setFontSize(30).setFontColor(C_MOSS);
+  sh.setRowHeight(1, 56);
+  put('A2', [['="Управленческая отчётность · обновлено "&TEXT(NOW(),"dd.mm.yyyy hh:mm")&" · отменённые заказы не учитываются"']])
+    .setFontColor('#7A7F5C').setFontSize(10);
+
+  // 1. Деньги и заказы
+  head('A4', ['Деньги и заказы'].concat(P.map(function (p) { return p[0]; })));
+  put('A5', [['Выручка'].concat(P.map(function (p) { return '=SUMIFS(' + Z + 'H:H,' + base + p[1] + ')'; }))]);
+  put('A6', [['Заказов'].concat(P.map(function (p) { return '=COUNTIFS(' + base + p[1] + ')'; }))]);
+  put('A7', [['Средний чек'].concat(P.map(function (p, i) { return '=IFERROR(' + col(i) + '5/' + col(i) + '6,0)'; }))]);
+  put('A8', [['Отменено заказов'].concat(P.map(function (p) {
+    return '=COUNTIFS(' + Z + 'A:A,">0",' + Z + 'C:C,"' + ST.cancel + '"' + p[1] + ')';
+  }))]);
+  sh.getRange('B5:E5').setNumberFormat(F_MONEY).setFontSize(16).setFontWeight('bold').setFontColor(C_RUST);
+  sh.getRange('B7:E7').setNumberFormat(F_MONEY);
+  sh.getRange('B6:E6').setNumberFormat('0');
+  sh.getRange('B8:E8').setNumberFormat('0').setFontColor('#7A7A7A');
+  sh.getRange('B5:E8').setHorizontalAlignment('right');
+  sh.setRowHeight(5, 38);
+
+  // 2. В работе сейчас
+  head('A10', ['Заказы в работе сейчас', 'Заказов', 'На сумму']);
+  const live = [['🆕 Новые — ждут ответа', ST.new], ['🛠 В работе', ST.work], ['💐 Собраны', ST.ready], ['🚚 В пути', ST.way]];
+  put('A11', live.map(function (x) {
+    return [x[0], '=COUNTIFS(' + Z + 'C:C,"' + x[1] + '")', '=SUMIFS(' + Z + 'H:H,' + Z + 'C:C,"' + x[1] + '")'];
+  }));
+  sh.getRange('C11:C14').setNumberFormat(F_MONEY);
+  sh.getRange('B11:C14').setHorizontalAlignment('right');
+  sh.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0)
+    .setBackground('#FFF1C2').setFontColor('#7A5B00').setBold(true).setRanges([sh.getRange('B11')]).build()]);
+
+  // 3. Клиенты
+  head('A16', ['Клиенты', '']);
+  put('A17', [
+    ['Всего в базе', '=COUNTA(' + K + 'A2:A)'],
+    ['Новых за этот месяц', '=COUNTIFS(' + K + 'E2:E,">="&EOMONTH(TODAY(),-1)+1)'],
+    ['Повторных (2+ заказа)', '=COUNTIF(' + K + 'C2:C,">1")'],
+    ['Доля повторных', '=IFERROR(B19/B17,0)'],
+    ['Выручка на одного клиента', '=IFERROR(SUM(' + K + 'D2:D)/B17,0)']
+  ]);
+  sh.getRange('B20').setNumberFormat('0%');
+  sh.getRange('B21').setNumberFormat(F_MONEY);
+  sh.getRange('B17:B19').setNumberFormat('0');
+  sh.getRange('B17:B21').setHorizontalAlignment('right');
+
+  // 4. Топ букетов
+  head('A23', ['Топ букетов', 'Штук', 'Выручка']);
+  put('A24', [['=IFERROR(QUERY(' + Z + "A2:H,\"select D, count(A), sum(H) where A is not null and C <> '" + ST.cancel +
+    "' group by D order by sum(H) desc limit 5 label count(A) '', sum(H) ''\",0),\"Пока нет заказов\")"]]);
+  sh.getRange('B24:B28').setNumberFormat('0').setHorizontalAlignment('right');
+  sh.getRange('C24:C28').setNumberFormat(F_MONEY).setHorizontalAlignment('right');
+
+  // 5. Как покупают
+  const cnt = function (cond) { return '=COUNTIFS(' + base + ',' + cond + ')'; };
+  const sum = function (cond) { return '=SUMIFS(' + Z + 'H:H,' + base + ',' + cond + ')'; };
+  const rows = [];
+  rows.push(['Курьер', cnt(Z + 'K:K,"Курьер"'), sum(Z + 'K:K,"Курьер"')]);
+  zones_(settings_()).forEach(function (z) {
+    rows.push(['   · ' + z.n, cnt(Z + 'L:L,"*(' + z.n + ')*"'), sum(Z + 'L:L,"*(' + z.n + ')*"')]);
+  });
+  rows.push(['Самовывоз', cnt(Z + 'K:K,"Самовывоз"'), sum(Z + 'K:K,"Самовывоз"')]);
+  rows.push(['', '', '']);
+  SLOTS.forEach(function (s) {
+    const t = s[0] + ':00–' + s[1] + ':00';
+    rows.push(['Интервал ' + t, cnt(Z + 'J:J,"' + t + '"'), sum(Z + 'J:J,"' + t + '"')]);
+  });
+  rows.push(['', '', '']);
+  ['S', 'M', 'L'].forEach(function (z) { rows.push(['Размер ' + z, cnt(Z + 'E:E,"' + z + '"'), sum(Z + 'E:E,"' + z + '"')]); });
+  head('A30', ['Как покупают', 'Заказов', 'Выручка']);
+  put('A31', rows);
+  sh.getRange(31, 2, rows.length, 1).setNumberFormat('0').setHorizontalAlignment('right');
+  sh.getRange(31, 3, rows.length, 1).setNumberFormat(F_MONEY).setHorizontalAlignment('right');
+
+  // 6. Праздники (справа под графиком)
+  const H = [
+    ['Новый год', 12, 31], ['14 февраля', 2, 14], ['8 Марта', 3, 8],
+    ['День знаний', 9, 1], ['День учителя', 10, 5], ['День матери', 0, 0]
+  ];
+  const nextDate = function (m, d) {
+    if (!m) {   // последнее воскресенье ноября
+      const f = function (y) { return 'DATE(' + y + ',11,30)-MOD(WEEKDAY(DATE(' + y + ',11,30))-1,7)'; };
+      return '=IF(' + f('YEAR(TODAY())') + '>=TODAY(),' + f('YEAR(TODAY())') + ',' + f('YEAR(TODAY())+1') + ')';
+    }
+    return '=IF(DATE(YEAR(TODAY()),' + m + ',' + d + ')>=TODAY(),DATE(YEAR(TODAY()),' + m + ',' + d + '),DATE(YEAR(TODAY())+1,' + m + ',' + d + '))';
+  };
+  put('N4', [['Праздник', 'Дата']]);
+  put('N5', H.map(function (h) { return [h[0], nextDate(h[1], h[2])]; }));
+  head('G23', ['Ближайшие праздники', 'Дата', 'Дней', 'Клиентов в базе']);
+  put('G24', [['=SORT(N5:O10,2,TRUE)']]);
+  put('I24', H.map(function (h, i) { return ['=H' + (24 + i) + '-TODAY()', '=B17']; }));
+  put('G30', [['="🔔 Ближайший — "&G24&" через "&I24&" дн. "&IF(I24<=14,"Пора напомнить клиентам из базы.","Напоминать за 7–14 дней.")']])
+    .setFontColor(C_RUST).setFontWeight('bold');
+  sh.getRange('H24:H29').setNumberFormat('dd.mm.yyyy').setHorizontalAlignment('right');
+  sh.getRange('I24:J29').setNumberFormat('0').setHorizontalAlignment('right');
+  sh.setConditionalFormatRules(sh.getConditionalFormatRules().concat([
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=$I24<=14')
+      .setBackground('#FFF1C2').setFontColor('#7A5B00').setRanges([sh.getRange('G24:J29')]).build()
+  ]));
+
+  // 7. График выручки по дням (данные справа, в N:O)
+  put('N13', [['День', 'Выручка']]);
+  put('N14', [['=SEQUENCE(30,1,TODAY()-29)']]);
+  put('O14', [['=MAP(N14:N43,LAMBDA(d,SUMIFS(' + Z + 'H:H,' + base + ',' + Z + 'B:B,">="&d,' + Z + 'B:B,"<"&(d+1))))']]);
+  sh.getRange('N14:N43').setNumberFormat('dd.mm');
+  sh.getRange('O14:O43').setNumberFormat(F_MONEY);
+  sh.getRange('N3').setValue('данные для графика и праздников').setFontColor('#9AA0A6').setFontSize(9);
+  sh.getRange('N4:O43').setFontColor('#9AA0A6').setFontSize(9);
+  const chart = sh.newChart().setChartType(Charts.ChartType.COLUMN)
+    .addRange(sh.getRange('N13:O43'))
+    .setNumHeaders(1)
+    .setPosition(4, 7, 0, 0)
+    .setOption('title', 'Выручка по дням, последние 30 дней')
+    .setOption('titleTextStyle', { color: C_INK, fontSize: 13, bold: true })
+    .setOption('legend', { position: 'none' })
+    .setOption('colors', [C_RUST])
+    .setOption('backgroundColor', '#FFFFFF')
+    .setOption('vAxis', { format: '#,##0 ₽', gridlines: { color: '#EEEEEE' } })
+    .setOption('hAxis', { format: 'dd.MM', textStyle: { fontSize: 9 } })
+    .setOption('width', 640).setOption('height', 340)
+    .build();
+  sh.insertChart(chart);
+
+  sh.setFrozenRows(2);
+  ss.setActiveSheet(sh);
+  return sh;
 }
