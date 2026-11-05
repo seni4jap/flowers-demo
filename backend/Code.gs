@@ -292,7 +292,14 @@ function createOrder_(d) {
   });
   sheet_(SH.ord).getRange(row, O['тех: сообщения'] + 1).setValue(JSON.stringify(sent));
 
-  return { ok: true, no: no, total: total, key: key, bot: botName_() };
+  // Заказ из Telegram (сайт открыт кнопкой «Каталог» в боте): привязываем покупателя сразу
+  let linked = false;
+  const tgUser = verifyWebApp_(d.tg);
+  if (tgUser) {
+    linked = linkBuyer_(tgUser.id, tgUser, no, key);
+  }
+
+  return { ok: true, no: no, total: total, key: key, bot: botName_(), linked: linked };
 }
 
 function upsertClient_(phone, name, sum, last, tgId) {
@@ -326,6 +333,8 @@ function handleUpdate_(u) {
   const chat = m.chat.id, text = String(m.text || '').trim();
   const isOwner = owners_().indexOf(String(chat)) >= 0;
 
+  if (isOwner && m.photo && m.photo.length) return forwardPhoto_(chat, m);
+
   if (text === '/start admin_' + ADMIN_KEY) {
     addOwner_(chat);
     return say_(chat, '✅ Готово! Теперь заказы с сайта будут приходить сюда.\n\n' +
@@ -357,13 +366,78 @@ function linkBuyer_(chat, from, no, key) {
   const r = sh.getRange(row, 1, 1, ORD_H.length).getValues()[0];
   if (String(r[O['тех: ключ']]) !== key) return say_(chat, 'Ссылка устарела. Позвоните нам, пожалуйста.');
   const handle = (from && from.username) ? '@' + from.username : String(chat);
+  const o = orderAt_(row);
+  const r2 = say_(chat, 'Здравствуйте, ' + esc_(o.name.split(' ')[0]) + '! 🌸\n\n' +
+    'Ваш заказ <b>№' + o.no + '</b>\n' + esc_(o.item) + ', размер ' + o.size + '\n' +
+    whenText_(o) + '\nИтого: ' + money_(o.total) + '\n\n' +
+    'Статус: ' + ST_ICON[o.code] + ' ' + o.status + '\n\n' +
+    (o.photo ? '📷 Перед отправкой пришлём сюда фото вашего букета.\n' : '') +
+    'Сюда придёт сообщение, когда статус изменится.');
+  if (!r2 || !r2.ok) return false;          // человек не запускал бота — писать ему нельзя
   sh.getRange(row, O['Telegram покупателя'] + 1).setValue(txt_(chat + ' ' + handle));
   upsertClient_(String(r[O['Телефон']]), String(r[O['Покупатель']]), 0, '', handle);
-  const o = orderAt_(row);
-  say_(chat, 'Здравствуйте, ' + esc_(o.name.split(' ')[0]) + '! 🌸\n\n' +
-    'Ваш заказ <b>№' + o.no + '</b>\n' + o.item + ', размер ' + o.size + '\n' +
-    whenText_(o) + '\nИтого: ' + money_(o.total) + '\n\n' +
-    'Статус: ' + ST_ICON[o.code] + ' ' + o.status + '\n\nСюда придёт сообщение, когда статус изменится.');
+  refreshOwners_(row);                     // в карточке владельца появится «🔔 получает статусы»
+  return true;
+}
+
+/** Проверка подписи данных Telegram Mini App (initData). Возвращает пользователя или null. */
+function verifyWebApp_(initData) {
+  if (!initData || typeof initData !== 'string' || initData.length > 4096) return null;
+  try {
+    let hash = '';
+    const kv = [];
+    initData.split('&').forEach(function (p) {
+      const i = p.indexOf('=');
+      if (i < 0) return;
+      const k = p.slice(0, i), v = decodeURIComponent(p.slice(i + 1));
+      if (k === 'hash') hash = v; else kv.push(k + '=' + v);
+    });
+    if (!hash) return null;
+    kv.sort();
+    const secret = Utilities.computeHmacSha256Signature(BOT_TOKEN, 'WebAppData');
+    const sig = Utilities.computeHmacSha256Signature(Utilities.newBlob(kv.join('\n')).getBytes(), secret);
+    const hex = sig.map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+    if (hex !== hash) return null;
+    const f = {};
+    kv.forEach(function (x) { const i = x.indexOf('='); f[x.slice(0, i)] = x.slice(i + 1); });
+    if (Date.now() / 1000 - Number(f.auth_date || 0) > 86400) return null;
+    const u = JSON.parse(f.user || 'null');
+    return u && u.id ? u : null;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
+/** Флорист ответил фотографией на карточку заказа — пересылаем покупателю. */
+function forwardPhoto_(chat, m) {
+  const reply = m.reply_to_message;
+  if (!reply) {
+    return say_(chat, '📷 Чтобы отправить фото покупателю, <b>ответьте этой фотографией на карточку заказа</b>: ' +
+      'смахните карточку влево (или «Ответить») и прикрепите фото.');
+  }
+  const v = sheet_(SH.ord).getDataRange().getValues();
+  let row = 0;
+  for (let i = 1; i < v.length && !row; i++) {
+    let msgs = [];
+    try { msgs = JSON.parse(String(v[i][O['тех: сообщения']] || '[]')); } catch (e) { msgs = []; }
+    msgs.forEach(function (cm) { if (String(cm[0]) === String(chat) && Number(cm[1]) === reply.message_id) row = i + 1; });
+  }
+  if (!row) return say_(chat, 'Не нашёл заказ для этой карточки. Ответьте фото именно на сообщение с заказом.');
+  const o = orderAt_(row), shop = settings_();
+  if (!o.buyerChat) {
+    return say_(chat, '📷 Покупатель заказа №' + o.no + ' не подключил Telegram. Отправьте фото в WhatsApp: ' + esc_(o.phone));
+  }
+  const ph = m.photo[m.photo.length - 1].file_id;
+  const r = tg_('sendPhoto', {
+    chat_id: o.buyerChat, photo: ph, parse_mode: 'HTML',
+    caption: 'Ваш букет <b>№' + o.no + '</b> готов 🌸\n' + esc_(o.item) + ', размер ' + o.size + '\n\n' +
+      'Если хотите что-то поправить — позвоните нам: ' + esc_(shop['Телефон магазина'] || '') + '.'
+  });
+  if (!r || !r.ok) return say_(chat, 'Не получилось отправить фото покупателю. Отправьте в WhatsApp: ' + esc_(o.phone));
+  sheet_(SH.ord).getRange(row, O['Фото до отправки'] + 1).setValue('Отправлено');
+  refreshOwners_(row);
+  tg_('sendMessage', { chat_id: chat, text: '✅ Фото отправлено покупателю (заказ №' + o.no + ')', reply_to_message_id: m.message_id });
 }
 
 function onButton_(q) {
@@ -414,7 +488,7 @@ function notifyBuyer_(o) {
     work: 'Флорист взял ваш заказ <b>№' + o.no + '</b> в работу 🛠\nСкоро свяжемся, чтобы подтвердить детали и отправить ссылку на оплату.',
     ready: o.pickup
       ? 'Ваш букет собран 💐 и ждёт вас: ' + esc_(shop['Самовывоз'] || '') + ', ' + o.date + ', ' + o.interval + '.'
-      : 'Ваш букет собран 💐' + (o.photo ? ' Фото пришлём перед отправкой.' : ' Скоро передадим курьеру.'),
+      : 'Ваш букет собран 💐' + (o.photo && !o.photoSent ? ' Фото пришлём перед отправкой.' : ' Скоро передадим курьеру.'),
     way: 'Курьер выехал 🚚 Заказ <b>№' + o.no + '</b> будет у получателя в интервале ' + o.interval + '.',
     done: 'Заказ <b>№' + o.no + '</b> доставлен ✅\nСпасибо, что выбрали ' + esc_(shop['Магазин'] || 'нас') + '! Будем рады видеть вас снова 🌸',
     given: 'Заказ <b>№' + o.no + '</b> выдан ✅\nСпасибо, что выбрали ' + esc_(shop['Магазин'] || 'нас') + '! 🌸',
@@ -449,10 +523,10 @@ function ownerText_(o) {
   L.push('👤 ' + esc_(o.name) + ', ' + esc_(o.phone));
   if (o.recipient && o.recipient !== 'Сам покупатель') L.push('🎁 Получатель: ' + esc_(o.recipient) + (o.rphone ? ', ' + esc_(o.rphone) : ''));
   if (o.card) L.push('✉️ Открытка: «' + esc_(o.card) + '»');
-  const flags = [];
-  if (o.photo) flags.push('📷 фото до отправки');
-  if (o.anon) flags.push('🕶 анонимно');
-  if (flags.length) L.push(flags.join(' · '));
+  if (o.anon) L.push('🕶 анонимно');
+  if (o.photoSent) L.push('📷 Фото букета отправлено покупателю ✅');
+  else if (o.photo && o.buyerChat && o.code !== 'cancel') L.push('📷 <b>Ждёт фото букета</b> — ответьте на это сообщение фотографией, бот перешлёт покупателю');
+  else if (o.photo && o.code !== 'cancel') L.push('📷 Просит фото букета — покупатель без Telegram, отправьте в WhatsApp');
   if (o.comment) L.push('💬 ' + esc_(o.comment));
   L.push('');
   L.push('Статус: <b>' + o.status + '</b>' + (o.taker && o.code !== 'new' ? ' · взял(а) ' + esc_(o.taker) : ''));
@@ -503,7 +577,7 @@ function orderAt_(row) {
     pickup: String(r[O['Получение']]) === 'Самовывоз', address: String(r[O['Адрес']]),
     name: String(r[O['Покупатель']]), phone: String(r[O['Телефон']]),
     recipient: String(r[O['Получатель']]), rphone: String(r[O['Телефон получателя']]),
-    card: String(r[O['Открытка']]), photo: String(r[O['Фото до отправки']]) === 'Да', anon: String(r[O['Анонимно']]) === 'Да',
+    card: String(r[O['Открытка']]), photo: /^(Да|Отправлено)$/.test(String(r[O['Фото до отправки']])), photoSent: String(r[O['Фото до отправки']]) === 'Отправлено', anon: String(r[O['Анонимно']]) === 'Да',
     comment: String(r[O['Комментарий']]), taker: String(r[O['Взял в работу']]),
     buyerChat: tgCell ? tgCell.split(' ')[0] : '', msgs: msgs
   };

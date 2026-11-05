@@ -215,7 +215,7 @@ footer .in{padding:56px 0 30px}.fg{display:grid;grid-template-columns:1fr 1fr 1f
     <textarea class="fld mt" id="cmt" placeholder="Комментарий для флориста (необязательно)"></textarea>
     <p class="sub" style="margin:12px 0 0;font-size:12px">Нажимая «Оформить», вы соглашаетесь с политикой конфиденциальности.</p>
    </div>
-   <div class="sp" data-s="4"><div class="done"><span class="k" id="dk">[ заказ принят ]</span><h3 class="h" style="font-size:52px;margin-top:8px" id="dn"></h3><p>Флорист свяжется с вами в течение 10 минут, чтобы подтвердить детали и отправить ссылку на оплату.</p><div class="sum" id="sum"></div><div class="tgw" id="tgw" style="display:none"><a class="btn" id="tgb" href="#" target="_blank" rel="noopener">Следить за заказом в Telegram</a><small>Пришлём сообщение, когда флорист возьмёт заказ, соберёт букет и передаст курьеру</small></div><button class="btn o" style="margin-top:14px" id="fin">Вернуться в каталог</button></div></div>
+   <div class="sp" data-s="4"><div class="done"><span class="k" id="dk">[ заказ принят ]</span><h3 class="h" style="font-size:52px;margin-top:8px" id="dn"></h3><p>Флорист свяжется с вами в течение 10 минут, чтобы подтвердить детали и отправить ссылку на оплату.</p><div class="sum" id="sum"></div><div class="tgw" id="tgw" style="display:none"><a class="btn" id="tgb" href="#" target="_blank" rel="noopener">Следить за заказом в Telegram</a><small id="tgn">Пришлём сообщение, когда флорист возьмёт заказ, соберёт букет и передаст курьеру</small></div><button class="btn o" style="margin-top:14px" id="fin">Вернуться в каталог</button></div></div>
    <p class="msg" id="msg"></p>
   </div>
   <div class="mft" id="mft"><button class="back x" id="bk" aria-label="Назад">←</button><div class="tot"><small id="tl">Букет · доставка</small><b id="tv"></b></div><button class="btn" id="nx">Далее</button></div>
@@ -230,6 +230,9 @@ const API='https://script.google.com/macros/s/AKfycbybhtMRwzvWNaG3IjvqYFBme3o2_N
 let P=[{"id":"1","c":"author","n":"Нежность пионов","img":"img/hero.webp","img2":"img/c8.webp","p":8500,"s":"Пионовидные розы, гортензия, эустома"},{"id":"2","c":"author","n":"Розовый сад","img":"img/c2.webp","img2":"img/c1.webp","p":6900,"s":"Розы, эустома, маттиола"},{"id":"3","c":"basket","n":"101 белая роза","img":"img/n_white1.webp","img2":"img/n_white2.webp","p":18900,"s":"Корзина, белые розы, эвкалипт"},{"id":"4","c":"box","n":"Пудровое облако","img":"img/c3.webp","img2":"img/c6.webp","p":9800,"s":"Розы, гипсофила, эвкалипт"},{"id":"5","c":"mono","n":"Белые гортензии","img":"img/c7.webp","img2":"img/c2.webp","p":7900,"s":"Гортензия, пионы, зелень"},{"id":"6","c":"basket","n":"Кустовые розы в корзине","img":"img/n_pink1.webp","img2":"img/n_pink2.webp","p":21500,"s":"Пионовидные кустовые розы"},{"id":"7","c":"box","n":"Лилии в шляпной коробке","img":"img/c4.webp","img2":"img/c3.webp","p":11900,"s":"Лилии, розы, альстромерия"},{"id":"8","c":"box","n":"Сиреневый вечер","img":"img/c6.webp","img2":"img/c4.webp","p":14500,"s":"Гортензия, розы, орхидея"}];
 let ZONES=[{n:'В пределах МКАД',p:0},{n:'До 10 км от МКАД',p:700},{n:'До 30 км от МКАД',p:1500}];
 let FULL=[],BOT='',PICKUP='м. Белорусская';
+/* Сайт открыт внутри Telegram (кнопка «Каталог» в боте): Telegram кладёт подписанные данные пользователя в адрес */
+const TG=(()=>{let d='';try{d=new URLSearchParams(location.hash.slice(1)).get('tgWebAppData')||sessionStorage.getItem('tgd')||'';if(d)sessionStorage.setItem('tgd',d)}catch(e){}return d})();
+if(TG){const sc=document.createElement('script');sc.src='https://telegram.org/js/telegram-web-app.js';sc.async=true;sc.onload=()=>{try{Telegram.WebApp.ready();Telegram.WebApp.expand()}catch(e){}};document.head.appendChild(sc)}
 const SZ=[['S','компактнее',.75],['M','как на фото',1],['L','пышнее',1.4]];
 const SL=[[9,12],[12,15],[15,18],[18,21]];
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -291,7 +294,7 @@ function valid(){
 function order(){
  return {a:'order',id:P[S.i].id,size:S.size,date:dayIso(),slot:S.slot,mode:S.mode,zone:+$('#zone').value,street:$('#street').value.trim(),
   name:$('#nm').value.trim(),phone:$('#tel').value,who:S.who,rname:$('#rnm').value.trim(),rphone:$('#rtel').value,
-  card:$('#cardc').checked,cardText:$('#cardt').value.trim(),photo:$('#photo').checked,anon:$('#anon').checked,comment:$('#cmt').value.trim()};
+  card:$('#cardc').checked,cardText:$('#cardt').value.trim(),photo:$('#photo').checked,anon:$('#anon').checked,comment:$('#cmt').value.trim(),tg:TG};
 }
 async function submit(){
  if(!API)return finish({});
@@ -311,8 +314,11 @@ function finish(r){
  $('#dk').textContent=r.no?'[ заказ №'+r.no+' принят ]':'[ заказ принят ]';
  const rows=[['Букет',b.n+', '+S.size],['Когда',day+', '+sl[0]+':00–'+sl[1]+':00'],['Куда',S.mode=='p'?'Самовывоз, '+PICKUP:$('#street').value.trim()],['Итого',fmt(r.total||price()+deliv())]];
  $('#sum').innerHTML='';rows.forEach(([a,c])=>{const d=document.createElement('div');d.innerHTML='<span></span><span></span>';d.children[0].textContent=a;d.children[1].textContent=c;$('#sum').appendChild(d)});
- const tg=r.no&&r.key&&BOT;$('#tgw').style.display=tg?'':'none';
- if(tg)$('#tgb').href='https://t.me/'+BOT+'?start=o_'+r.no+'_'+r.key;
+ const tg=r.no&&r.key&&BOT,ph=$('#photo').checked;$('#tgw').style.display=tg?'':'none';
+ if(r.linked){$('#tgb').style.display='none';$('#tgn').textContent='✓ '+(ph?'Фото букета перед отправкой и статусы заказа придут':'Статусы заказа придут')+' в чат с ботом в Telegram'}
+ else if(tg){$('#tgb').style.display='';$('#tgb').href='https://t.me/'+BOT+'?start=o_'+r.no+'_'+r.key;
+  $('#tgb').textContent=ph?'Получить фото букета в Telegram':'Следить за заказом в Telegram';
+  $('#tgn').textContent=ph?'Пришлём фото букета перед отправкой и сообщим, когда курьер выедет':'Пришлём сообщение, когда флорист возьмёт заказ, соберёт букет и передаст курьеру'}
  go(4);
 }
 $('#nx').onclick=()=>{if($('#nx').disabled||!valid())return;if(S.step<3)go(S.step+1);else submit()};
