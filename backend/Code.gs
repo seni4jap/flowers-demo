@@ -825,9 +825,11 @@ function styleAll_() {
 function buildSummary_() {
   const ss = SpreadsheetApp.getActive();
   const NAME = 'Сводка';
-  const old = ss.getSheetByName(NAME);
-  if (old) ss.deleteSheet(old);
+  const CALC = '⚙ Расчёты';
+  [NAME, CALC].forEach(function (n) { const o = ss.getSheetByName(n); if (o) ss.deleteSheet(o); });
+  const calc = ss.insertSheet(CALC, ss.getSheets().length);   // служебный лист — в самом конце
   const sh = ss.insertSheet(NAME, 0);
+  const C = "'" + CALC + "'!";
   sh.setHiddenGridlines(true);
   const SEP = formulaSep_(sh);
   Logger.log('Разделитель формул в этой таблице: «' + SEP + '»');
@@ -844,8 +846,8 @@ function buildSummary_() {
   const col = function (i) { return String.fromCharCode(66 + i); };   // B, C, D, E
   // Формулы пишем через setFormula: он всегда понимает английский синтаксис с запятыми,
   // а setValues разбирает формулы по языку таблицы (в русской — через «;») и даёт #ERROR!.
-  const put = function (a1, rows) {
-    const r = sh.getRange(a1).offset(0, 0, rows.length, rows[0].length);
+  const putIn = function (target, a1, rows) {
+    const r = target.getRange(a1).offset(0, 0, rows.length, rows[0].length);
     rows.forEach(function (row, i) {
       row.forEach(function (v, j) {
         const cell = r.offset(i, j, 1, 1);
@@ -854,6 +856,7 @@ function buildSummary_() {
     });
     return r;
   };
+  const put = function (a1, rows) { return putIn(sh, a1, rows); };
   const head = function (a1, cols) {
     const r = put(a1, [cols]);
     r.setBackground(C_MOSS).setFontColor(C_CREAM).setFontWeight('bold').setFontSize(11);
@@ -953,10 +956,23 @@ function buildSummary_() {
     }
     return '=IF(DATE(YEAR(TODAY()),' + m + ',' + d + ')>=TODAY(),DATE(YEAR(TODAY()),' + m + ',' + d + '),DATE(YEAR(TODAY())+1,' + m + ',' + d + '))';
   };
-  put('N4', [['Праздник', 'Дата']]);
-  put('N5', H.map(function (h) { return [h[0], nextDate(h[1], h[2])]; }));
+  // Служебный лист: подпись, праздники, выручка по дням
+  calc.setHiddenGridlines(true);
+  calc.setTabColor('#9AA0A6');
+  calc.getRange(1, 1, 60, 6).setFontFamily('Roboto').setFontSize(10).setFontColor('#5F6368');
+  calc.setColumnWidth(1, 170); calc.setColumnWidth(2, 120); calc.setColumnWidth(3, 40);
+  calc.setColumnWidth(4, 120); calc.setColumnWidth(5, 120);
+  putIn(calc, 'A1', [['⚙ Служебный лист — ничего здесь не меняйте']]).setFontSize(14).setFontWeight('bold').setFontColor(C_RUST);
+  putIn(calc, 'A2', [['Всё считается автоматически из листа «Заказы». Отсюда берутся график выручки и блок «Ближайшие праздники» на листе «Сводка». Если изменить ячейки вручную, сводка покажет неверные цифры.']])
+    .setWrap(true).setFontColor(C_INK);
+  calc.getRange('A2:E2').merge();
+  calc.setRowHeight(2, 54);
+  putIn(calc, 'A4', [['Ближайшая дата праздников', '']]).setFontWeight('bold').setFontColor(C_INK);
+  putIn(calc, 'A5', [['Праздник', 'Дата']]).setFontWeight('bold');
+  putIn(calc, 'A6', H.map(function (h) { return [h[0], nextDate(h[1], h[2])]; }));
+  calc.getRange('B6:B11').setNumberFormat('dd.mm.yyyy');
   head('G23', ['Ближайшие праздники', 'Дата', 'Дней', 'Клиентов в базе']);
-  put('G24', [['=SORT(N5:O10,2,TRUE)']]);
+  put('G24', [['=SORT(' + C + 'A6:B11,2,TRUE)']]);
   put('I24', H.map(function (h, i) { return ['=H' + (24 + i) + '-TODAY()', '=B17']; }));
   put('G30', [['="🔔 Ближайший — "&G24&" через "&I24&" дн. "&IF(I24<=14,"Пора напомнить клиентам из базы.","Напоминать за 7–14 дней.")']])
     .setFontColor(C_RUST).setFontWeight('bold');
@@ -967,16 +983,16 @@ function buildSummary_() {
       .setBackground('#FFF1C2').setFontColor('#7A5B00').setRanges([sh.getRange('G24:J29')]).build()
   ]));
 
-  // 7. График выручки по дням (данные справа, в N:O)
-  put('N13', [['День', 'Выручка']]);
-  put('N14', [['=SEQUENCE(30,1,TODAY()-29)']]);
-  put('O14', [['=MAP(N14:N43,LAMBDA(d,SUMIFS(' + Z + 'H:H,' + base + ',' + Z + 'B:B,">="&d,' + Z + 'B:B,"<"&(d+1))))']]);
-  sh.getRange('N14:N43').setNumberFormat('dd.mm');
-  sh.getRange('O14:O43').setNumberFormat(F_MONEY);
-  sh.getRange('N3').setValue('данные для графика и праздников').setFontColor('#9AA0A6').setFontSize(9);
-  sh.getRange('N4:O43').setFontColor('#9AA0A6').setFontSize(9);
+  // 7. График выручки по дням (данные — на служебном листе)
+  putIn(calc, 'D4', [['Выручка по дням, 30 дней', '']]).setFontWeight('bold').setFontColor(C_INK);
+  putIn(calc, 'D5', [['День', 'Выручка']]).setFontWeight('bold');
+  putIn(calc, 'D6', [['=SEQUENCE(30,1,TODAY()-29)']]);
+  putIn(calc, 'E6', [['=MAP(D6:D35,LAMBDA(d,SUMIFS(' + Z + 'H:H,' + base + ',' + Z + 'B:B,">="&d,' + Z + 'B:B,"<"&(d+1))))']]);
+  calc.getRange('D6:D35').setNumberFormat('dd.mm');
+  calc.getRange('E6:E35').setNumberFormat(F_MONEY);
+  calc.protect().setDescription('Служебный лист: считается автоматически').setWarningOnly(true);
   const chart = sh.newChart().setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange('N13:O43'))
+    .addRange(calc.getRange('D5:E35'))
     .setNumHeaders(1)
     .setPosition(4, 7, 0, 0)
     .setOption('title', 'Выручка по дням, последние 30 дней')
